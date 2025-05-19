@@ -11,3 +11,7 @@ class UpdateQuantity(BaseModel):
     quantity:int
     food_id: int
     user_id:int
+
+
+class OrderItems(BaseModel):
+    user_id:int

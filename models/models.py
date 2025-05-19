@@ -77,4 +77,22 @@ class OrderItem(Model):
     price = fields.DecimalField(max_digits=10, decimal_places=2)
 
     
-    
+class DeliveryPerson(Model):  
+    id = fields.BigIntField(pk=True)
+    name = fields.CharField(max_length=100)
+    phone_number = fields.CharField(max_length=15, unique=True)
+    email = fields.CharField(max_length=100, null=True)
+    is_available = fields.BooleanField(default=True)
+    location = fields.CharField(max_length=255, null=True)
+    rating = fields.DecimalField(max_digits=2, decimal_places=1, default=5.0)
+    assigned_orders = fields.IntField(default=0)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
+
+
+
+class DeliveryAssignment(Model):
+    id=fields.BigIntField(pk=True)
+    delivery_person_id=fields.ForeignKeyField("models.DeliveryPerson",related_name="delivery_person")
+    order=fields.BigIntField()
+
