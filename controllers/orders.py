@@ -2,9 +2,11 @@ from models.models import *
 from schemas.schemas import *
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from fastapi import APIRouter
-
+from fastapi import APIRouter,WebSocket,WebSocketDisconnect,Depends
+from websocket.ws_manager import connection
 router=APIRouter(prefix="/v1")
+
+
 
 
 @router.post("/add-to-cart/")
@@ -14,6 +16,19 @@ async def add_to_cart(request: AddToCart):
             food_id=request.food_id,
             user_id=request.user_id,
         )
+        data=await CartItem.filter(user_id=request.user_id).values()
+        cart_data=[{"food_id":i['food_id']}for i in data ]
+        user_id = str(request.user_id)
+        if user_id in connection:
+          try:
+              await connection[user_id].send_json({
+                "event": "cart_updated",
+                "cart": cart_data
+              })
+          except:
+              del connection[request.user_id]
+              
+
         return JSONResponse(
             content={"message": "Food added to cart"}, media_type="application/json",status_code=201
         )
@@ -119,3 +134,19 @@ async def assignDeliveryPerson(order_id, user, location):
         return False
     except Exception as error:
         return False
+    
+
+
+
+
+
+@router.websocket("/ws/cart/{user_id}")
+async def websocket_connection(websocket:WebSocket,user_id:str):
+    user_id = str(user_id).strip()
+    await websocket.accept()
+    connection[user_id]=websocket
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        connection.pop(user_id,None)
